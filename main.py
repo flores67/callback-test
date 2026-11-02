@@ -2,7 +2,6 @@
 import os
 import json
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
 
 import psycopg
 from psycopg.types.json import Jsonb
@@ -10,6 +9,7 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
 DATABASE_URL = os.environ["DATABASE_URL"]
@@ -66,8 +66,8 @@ async def health():
     return {"status": "ok"}
 
 
-@app.post("/callback")
-async def capture_callback(request: Request):
+@app.post("/{context_path:path}")
+async def capture_callback(request: Request, context_path: str):
     raw_body = bytearray()
 
     async for chunk in request.stream():
@@ -96,8 +96,10 @@ async def capture_callback(request: Request):
 
     payload = None
 
-    if "application/json" in content_type.lower() or \
-            "+json" in content_type.lower():
+    if (
+            "application/json" in content_type.lower()
+            or "+json" in content_type.lower()
+    ):
         try:
             payload = json.loads(body)
         except (ValueError, UnicodeDecodeError):
@@ -159,8 +161,5 @@ async def capture_callback(request: Request):
         )
 
     return {
-        "status": "accepted",
-        # "id": event_id,
-        # "received_at": received_at.isoformat(),
-        # "payload_size": len(body)
+        "status": "accepted"
     }
